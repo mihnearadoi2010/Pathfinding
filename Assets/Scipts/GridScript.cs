@@ -16,10 +16,8 @@ public class Grid : MonoBehaviour
         worldNodeDiameter = worldNodeRadius * 2;
 
         int gridRows = Mathf.RoundToInt(worldGridSize.x / worldNodeDiameter);
-        // cutare
-        // aici nu e bine
         int gridCols = Mathf.RoundToInt(worldGridSize.y / worldNodeDiameter);
-
+        //ToDo aici tre sa vad cum se face
         grid = CreateGrid(gridRows, gridCols);
     }
 
