@@ -17,7 +17,7 @@ public class Grid : MonoBehaviour
 
         int gridRows = Mathf.RoundToInt(worldGridSize.x / worldNodeDiameter);
         int gridCols = Mathf.RoundToInt(worldGridSize.y / worldNodeDiameter);
-
+        //ToDo aici tre sa vad cum se face
         grid = CreateGrid(gridRows, gridCols);
     }
 
@@ -26,6 +26,8 @@ public class Grid : MonoBehaviour
         float percentX = (worldPosition.x - worldGridSize.x) / worldGridSize.x;
         percentX = Mathf.Clamp01(percentX);
 
+
+        //for
         float percentY = (worldPosition.z - worldGridSize.y) / worldGridSize.y;
         percentY = Mathf.Clamp01(percentY);
 
