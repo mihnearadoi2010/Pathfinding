@@ -2,10 +2,10 @@ using UnityEngine;
 
 public class Node
 {
-    public int Row;
-    public int Col;
-    public Vector3 WorldPos;
-    public bool IsWalkable;
+    public int Row { get; }
+    public int Col { get; }
+    public Vector3 WorldPos { get; }
+    public bool IsWalkable { get; }
 
     public Node(int row, int col, Vector3 worldPos, bool isWalkable)
     {

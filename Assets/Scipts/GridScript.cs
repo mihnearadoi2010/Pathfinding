@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Grid : MonoBehaviour
+public class GridScript : MonoBehaviour
 {
     private Node[,] grid;
 
@@ -16,7 +16,7 @@ public class Grid : MonoBehaviour
 
         int gridRows = Mathf.RoundToInt(worldGridSize.x / worldNodeDiameter);
         int gridCols = Mathf.RoundToInt(worldGridSize.y / worldNodeDiameter);
-
+        
         grid = CreateGrid(gridRows, gridCols);
     }
 
