@@ -1,6 +1,6 @@
-using System.Collections.Generic;
-using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using System.Collections.Generic;
+
 
 public class GridScript : MonoBehaviour
 {

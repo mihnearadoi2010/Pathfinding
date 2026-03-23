@@ -1,10 +1,15 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System.Diagnostics;
+using UnityEngine.InputSystem;
+
 
 public class PathfinderScript : MonoBehaviour
 {
-    GridScript grid;
+    private GridScript grid;
+
+    private Heap<Node> open;
+    HashSet<Node> closed;
 
     [SerializeField] private Transform seeker;
     [SerializeField] private Transform target;
@@ -12,23 +17,25 @@ public class PathfinderScript : MonoBehaviour
     private void Awake()
     {
         grid = GetComponent<GridScript>();
+        open = new Heap<Node>(grid.MaxSize);
+        closed = new HashSet<Node>();
     }
 
     private void Update()
     {
-        grid.path = FindPath(seeker.transform.position, target.transform.position);
+        if (Keyboard.current.spaceKey.wasPressedThisFrame)
+        {
+            grid.path = FindPath(seeker.transform.position, target.transform.position);
+        }
     }
 
     private List<Node> FindPath(Vector3 startPos, Vector3 targetPos)
     {
-        Stopwatch sw = new Stopwatch();
-        sw.Start();
-
         Node startNode = grid.GetNodeFromWorldPos(startPos);
         Node targetNode = grid.GetNodeFromWorldPos(targetPos);
 
-        Heap<Node> open = new Heap<Node>(grid.MaxSize);
-        HashSet<Node> closed = new HashSet<Node>();
+        open.Clear();
+        closed.Clear();
 
         open.Add(startNode);
 
@@ -39,8 +46,6 @@ public class PathfinderScript : MonoBehaviour
 
             if (currentNode == targetNode)
             {
-                sw.Stop();
-                print(sw.ElapsedMilliseconds);
                 return RetracePath(startNode, targetNode);
             }
 

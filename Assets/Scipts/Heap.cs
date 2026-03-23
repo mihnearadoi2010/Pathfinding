@@ -1,5 +1,4 @@
 using System;
-using static UnityEditor.Progress;
 
 
 public class Heap<T> where T : IHeapItem<T>
@@ -35,7 +34,16 @@ public class Heap<T> where T : IHeapItem<T>
 
     public bool Contains(T item)
     {
-        return Equals(items[item.HeapIndex], item);
+        if (item.HeapIndex < Length)
+        {
+            return Equals(items[item.HeapIndex], item);
+        }
+        return false;
+    }
+
+    public void Clear()
+    {
+        Length = 0;
     }
 
     private void SortDown(T item)
