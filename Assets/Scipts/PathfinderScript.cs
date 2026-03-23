@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 public class PathfinderScript : MonoBehaviour
 {
@@ -20,22 +21,26 @@ public class PathfinderScript : MonoBehaviour
 
     private List<Node> FindPath(Vector3 startPos, Vector3 targetPos)
     {
+        Stopwatch sw = new Stopwatch();
+        sw.Start();
+
         Node startNode = grid.GetNodeFromWorldPos(startPos);
         Node targetNode = grid.GetNodeFromWorldPos(targetPos);
 
-        List<Node> open = new List<Node>();
+        Heap<Node> open = new Heap<Node>(grid.MaxSize);
         HashSet<Node> closed = new HashSet<Node>();
 
         open.Add(startNode);
 
-        while (open.Count > 0)
+        while (open.Length > 0)
         {
-            var currentNode = GetCheapestNode(open);
-            open.Remove(currentNode);
+            var currentNode = open.GetFirst();
             closed.Add(currentNode);
 
             if (currentNode == targetNode)
             {
+                sw.Stop();
+                print(sw.ElapsedMilliseconds);
                 return RetracePath(startNode, targetNode);
             }
 
@@ -78,20 +83,5 @@ public class PathfinderScript : MonoBehaviour
 
         path.Reverse();
         return path;
-    }
-
-    private Node GetCheapestNode(List<Node> nodeList)
-    {
-        var cheapestNode = nodeList[0];
-
-        foreach (var node in nodeList)
-        {
-            if (node.FCost < cheapestNode.FCost || (node.FCost == cheapestNode.FCost && node.HCost < cheapestNode.HCost))
-            {
-                cheapestNode = node;
-            }
-        }
-
-        return cheapestNode;
     }
 }

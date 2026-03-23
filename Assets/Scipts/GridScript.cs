@@ -1,8 +1,11 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
+using UnityEngine;
 
 public class GridScript : MonoBehaviour
 {
+    public bool OnlyShowPathGizmos;
+
     private Node[,] grid;
     public List<Node> path;
 
@@ -11,6 +14,8 @@ public class GridScript : MonoBehaviour
 
     [SerializeField] private float worldNodeRadius;
     private float worldNodeDiameter;
+
+    public int MaxSize { get {  return grid.GetLength(0) * grid.GetLength(1); } }
 
     private void Awake()
     {
@@ -90,6 +95,16 @@ public class GridScript : MonoBehaviour
 
         if (grid != null)
         {
+            if (OnlyShowPathGizmos)
+            {
+                foreach (Node pathNode in path)
+                {
+                    Gizmos.color = Color.black;
+                    Gizmos.DrawCube(pathNode.WorldPos, Vector3.one * (worldNodeDiameter - 0.1f));
+                }
+                return;
+            }
+
             foreach (Node node in grid)
             {
                 Gizmos.color = node.IsWalkable ? Color.white : Color.red;
