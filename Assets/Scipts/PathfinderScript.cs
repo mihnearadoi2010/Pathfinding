@@ -1,81 +1,94 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Diagnostics;
-using UnityEngine.InputSystem;
-
+using System.Collections;
+using System;
 
 public class PathfinderScript : MonoBehaviour
 {
     private GridScript grid;
+    private PathRequestManager pathRequestManager;
 
     private Heap<Node> open;
     HashSet<Node> closed;
 
-    [SerializeField] private Transform seeker;
-    [SerializeField] private Transform target;
-
     private void Awake()
     {
         grid = GetComponent<GridScript>();
+        pathRequestManager = GetComponent<PathRequestManager>();
+
         open = new Heap<Node>(grid.MaxSize);
         closed = new HashSet<Node>();
     }
 
-    private void Update()
+    public void StartFindPath(Vector3 startPos, Vector3 targetPos)
     {
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            grid.path = FindPath(seeker.transform.position, target.transform.position);
-        }
+        StartCoroutine(FindPath(startPos, targetPos));
     }
 
-    private List<Node> FindPath(Vector3 startPos, Vector3 targetPos)
+    IEnumerator FindPath(Vector3 startPos, Vector3 targetPos)
     {
         Node startNode = grid.GetNodeFromWorldPos(startPos);
         Node targetNode = grid.GetNodeFromWorldPos(targetPos);
 
-        open.Clear();
-        closed.Clear();
+        Vector3[] pathWaypoints = new Vector3[0];
+        bool hasFoundPath = false;
 
-        open.Add(startNode);
-
-        while (open.Length > 0)
+        if (startNode.IsWalkable && targetNode.IsWalkable)
         {
-            var currentNode = open.GetFirst();
-            closed.Add(currentNode);
+            open.Clear();
+            closed.Clear();
 
-            if (currentNode == targetNode)
-            {
-                return RetracePath(startNode, targetNode);
-            }
+            open.Add(startNode);
 
-            foreach (var neighbor in grid.GetNeighbors(currentNode))
+            while (open.Length > 0)
             {
-                if (closed.Contains(neighbor) || !neighbor.IsWalkable)
+                var currentNode = open.GetFirst();
+                closed.Add(currentNode);
+
+                if (currentNode == targetNode)
                 {
-                    continue;
+                    hasFoundPath = true;
+                    break;
                 }
 
-                int newNeighborGCost = currentNode.GCost + neighbor.GetDistance(currentNode);
-
-                if (newNeighborGCost < neighbor.GCost || !open.Contains(neighbor))
+                foreach (var neighbor in grid.GetNeighbors(currentNode))
                 {
-                    neighbor.GCost = newNeighborGCost;
-                    neighbor.HCost = neighbor.GetDistance(targetNode);
-                    neighbor.Parent = currentNode;
-
-                    if (!open.Contains(neighbor))
+                    if (closed.Contains(neighbor) || !neighbor.IsWalkable)
                     {
-                        open.Add(neighbor);
+                        continue;
+                    }
+
+                    int newNeighborGCost = currentNode.GCost + neighbor.GetDistance(currentNode);
+
+                    if (newNeighborGCost < neighbor.GCost || !open.Contains(neighbor))
+                    {
+                        neighbor.GCost = newNeighborGCost;
+                        neighbor.HCost = neighbor.GetDistance(targetNode);
+                        neighbor.Parent = currentNode;
+
+                        if (!open.Contains(neighbor))
+                        {
+                            open.Add(neighbor);
+                        }
                     }
                 }
             }
         }
+        
+        yield return null;
 
-        return null;
+        if (hasFoundPath)
+        {
+            pathWaypoints = RetracePath(startNode, targetNode);
+        }
+        pathRequestManager.FinishProcessingPath(pathWaypoints, hasFoundPath);
+
+
+
+
     }
 
-    private List<Node> RetracePath(Node startNode, Node endNode)
+    private Vector3[] RetracePath(Node startNode, Node endNode)
     {
         List<Node> path = new List<Node>();
         var currentNode = endNode;
@@ -86,7 +99,25 @@ public class PathfinderScript : MonoBehaviour
             currentNode = currentNode.Parent;
         }
 
-        path.Reverse();
-        return path;
+        Vector3[] pathWaypoints = SimplifyPath(path);
+        Array.Reverse(pathWaypoints);
+        return pathWaypoints;
+    }
+
+    private Vector3[] SimplifyPath(List<Node> path)
+    {
+        List<Vector3> pathWaypoints = new List<Vector3>();
+        Vector2 oldDirection = Vector2.zero;
+
+        for (int i = 1; i < path.Count; i++)
+        {
+            Vector2 newDirection = new Vector2(path[i - 1].Row - path[i].Row, path[i - 1].Col - path[i].Col);
+            if (newDirection != oldDirection)
+            {
+                pathWaypoints.Add(path[i].WorldPos);
+            }
+        }
+
+        return pathWaypoints.ToArray();
     }
 }

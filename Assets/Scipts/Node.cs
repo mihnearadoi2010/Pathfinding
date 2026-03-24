@@ -1,6 +1,5 @@
 using UnityEngine;
 
-
 public class Node : IHeapItem<Node>
 {
     public int Row { get; }
