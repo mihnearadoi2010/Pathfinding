@@ -48,9 +48,10 @@ public class PathRequestManager : MonoBehaviour
 
         currentPathRequest = pathRequestQueue.Dequeue();
         isProcessingPath = true;
+        pathfinder.StartFindPath(currentPathRequest.pathStart, currentPathRequest.pathEnd);
     }
 
-    private void FinishProcessingPath(Vector3[] path, bool hasFoundPath)
+    public void FinishProcessingPath(Vector3[] path, bool hasFoundPath)
     {
         currentPathRequest.callback(path, hasFoundPath);
         isProcessingPath = false;

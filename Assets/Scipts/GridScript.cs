@@ -1,7 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-
 public class GridScript : MonoBehaviour
 {
     public bool DisplayGridGizmos;
