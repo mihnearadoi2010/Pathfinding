@@ -1,7 +1,5 @@
 using UnityEngine;
 using System.Collections.Generic;
-using System.Diagnostics;
-using UnityEngine.InputSystem;
 
 
 public class PathfinderScript : MonoBehaviour
@@ -11,22 +9,11 @@ public class PathfinderScript : MonoBehaviour
     private Heap<Node> open;
     HashSet<Node> closed;
 
-    [SerializeField] private Transform seeker;
-    [SerializeField] private Transform target;
-
     private void Awake()
     {
         grid = GetComponent<GridScript>();
         open = new Heap<Node>(grid.MaxSize);
         closed = new HashSet<Node>();
-    }
-
-    private void Update()
-    {
-        if (Keyboard.current.spaceKey.wasPressedThisFrame)
-        {
-            grid.path = FindPath(seeker.transform.position, target.transform.position);
-        }
     }
 
     private List<Node> FindPath(Vector3 startPos, Vector3 targetPos)

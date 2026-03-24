@@ -4,10 +4,9 @@ using System.Collections.Generic;
 
 public class GridScript : MonoBehaviour
 {
-    public bool OnlyShowPathGizmos;
+    public bool DisplayGridGizmos;
 
     private Node[,] grid;
-    public List<Node> path;
 
     [SerializeField] private LayerMask unwalkableMask;
     [SerializeField] private Vector2 worldGridSize;
@@ -93,30 +92,11 @@ public class GridScript : MonoBehaviour
     {
         Gizmos.DrawWireCube(transform.position, new Vector3(worldGridSize.x, 1, worldGridSize.y));
 
-        if (grid != null)
+        if (grid != null && DisplayGridGizmos)
         {
-            if (OnlyShowPathGizmos)
-            {
-                foreach (Node pathNode in path)
-                {
-                    Gizmos.color = Color.black;
-                    Gizmos.DrawCube(pathNode.WorldPos, Vector3.one * (worldNodeDiameter - 0.1f));
-                }
-                return;
-            }
-
             foreach (Node node in grid)
             {
-                Gizmos.color = node.IsWalkable ? Color.white : Color.red;
-
-                if (path != null)
-                {
-                    if (path.Contains(node))
-                    {
-                        Gizmos.color = Color.black;
-                    }
-                }
-                
+                Gizmos.color = node.IsWalkable ? Color.white : Color.red;                
                 Gizmos.DrawCube(node.WorldPos, Vector3.one * (worldNodeDiameter - 0.1f));
             }
         }
