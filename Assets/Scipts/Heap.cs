@@ -45,6 +45,12 @@ public class Heap<T> where T : IHeapItem<T>
         Length = 0;
     }
 
+    public void Update(T item)
+    {
+        SortUp(item);
+        SortDown(item);
+    }
+
     private void SortDown(T item)
     {
         while (true)

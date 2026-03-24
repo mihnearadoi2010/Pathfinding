@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class GridScript : MonoBehaviour
 {
-    public bool DisplayGridGizmos;
+    [SerializeField] private bool DisplayGridGizmos;
 
     private Node[,] grid;
 

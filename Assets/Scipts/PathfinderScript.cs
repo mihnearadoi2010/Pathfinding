@@ -70,6 +70,10 @@ public class PathfinderScript : MonoBehaviour
                         {
                             open.Add(neighbor);
                         }
+                        else
+                        {
+                            open.Update(neighbor);
+                        }
                     }
                 }
             }
@@ -82,10 +86,6 @@ public class PathfinderScript : MonoBehaviour
             pathWaypoints = RetracePath(startNode, targetNode);
         }
         pathRequestManager.FinishProcessingPath(pathWaypoints, hasFoundPath);
-
-
-
-
     }
 
     private Vector3[] RetracePath(Node startNode, Node endNode)
@@ -116,6 +116,7 @@ public class PathfinderScript : MonoBehaviour
             {
                 pathWaypoints.Add(path[i].WorldPos);
             }
+            oldDirection = newDirection;
         }
 
         return pathWaypoints.ToArray();
