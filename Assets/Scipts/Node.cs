@@ -11,7 +11,7 @@ public class Node : IHeapItem<Node>
     public int GCost { get; set; } = int.MaxValue; //distance from start node
     public int HCost { get; set; } //distance from end node
     public int FCost { get { return GCost + HCost; } }
-    public int Weight { get; }
+    public int Weight { get; set; }
 
     public Node Parent { get; set; }
     public int HeapIndex { get; set; }

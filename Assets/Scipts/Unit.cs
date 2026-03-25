@@ -6,7 +6,7 @@ public class Unit : MonoBehaviour
     [SerializeField] private bool ShowPathGizmos;
     [SerializeField] private Transform target;
 
-    private float speed = 5;
+    private float speed = 20;
     private Vector3[] path;
 
     private int currentWaypointIndex = 0;
@@ -28,7 +28,7 @@ public class Unit : MonoBehaviour
         StartCoroutine(FollowPath());
     }
 
-    IEnumerator FollowPath()
+    private IEnumerator FollowPath()
     {
         for (int i = 0; i < path.Length; i++)
         {
@@ -60,7 +60,7 @@ public class Unit : MonoBehaviour
         {
             for (int i = currentWaypointIndex; i < path.Length; i++)
             {
-                Vector3 destinationPos = new Vector3(path[i].x, transform.position.y + 0.5f, path[i].z);
+                Vector3 destinationPos = new Vector3(path[i].x, transform.position.y, path[i].z);
                 Gizmos.DrawCube(destinationPos, Vector3.one / 2);
 
                 if (i == currentWaypointIndex)

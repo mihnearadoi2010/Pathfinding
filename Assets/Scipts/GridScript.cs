@@ -1,30 +1,36 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.Profiling;
 
 public class GridScript : MonoBehaviour
 {
     [SerializeField] private bool DisplayGridGizmos;
+    private int minWeight = int.MaxValue;
+    private int maxWeight = int.MinValue;
 
     private Node[,] grid;
+    private int gridRows;
+    private int gridCols;
 
     [SerializeField] private Vector2 worldGridSize;
     [SerializeField] private float worldNodeRadius;
 
     [SerializeField] private TerrainType[] terrainTypes;
     [SerializeField] private LayerMask unwalkableMask;
+    [SerializeField] private int obstacleProximityWeight;
     private Dictionary<int, int> walkableTerrain = new Dictionary<int, int>();
     private LayerMask walkableMask;
 
     private float worldNodeDiameter;
 
-    public int MaxSize { get {  return grid.GetLength(0) * grid.GetLength(1); } }
+    public int MaxSize { get {  return gridRows * gridCols; } }
 
     private void Awake()
     {
         worldNodeDiameter = worldNodeRadius * 2;
 
-        int gridRows = Mathf.RoundToInt(worldGridSize.x / worldNodeDiameter);
-        int gridCols = Mathf.RoundToInt(worldGridSize.y / worldNodeDiameter);
+        gridRows = Mathf.RoundToInt(worldGridSize.x / worldNodeDiameter);
+        gridCols = Mathf.RoundToInt(worldGridSize.y / worldNodeDiameter);
 
         foreach (var terrainType in terrainTypes)
         {
@@ -33,6 +39,7 @@ public class GridScript : MonoBehaviour
         }
         
         grid = CreateGrid(gridRows, gridCols);
+        BlurWeightMap(3);
     }
 
     private Node[,] CreateGrid(int rows, int cols)
@@ -44,21 +51,23 @@ public class GridScript : MonoBehaviour
         {
             for (int j = 0; j < cols; j++)
             {
-                Vector3 worldNodePos = worldGridBottomLeft + Vector3.right * (worldNodeDiameter * i + worldNodeRadius) 
-                                                           + Vector3.forward * (worldNodeDiameter * j + worldNodeRadius);
+                Vector3 worldNodePos = worldGridBottomLeft + Vector3.right * (worldNodeDiameter * j + worldNodeRadius) 
+                                                           + Vector3.forward * (worldNodeDiameter * i + worldNodeRadius);
 
                 bool isWalkable = !Physics.CheckSphere(worldNodePos, worldNodeRadius, unwalkableMask);
 
                 int weight = 0;
-                if (isWalkable)
-                {
-                    Ray ray = new Ray(worldNodePos + Vector3.up * 50, Vector3.down);
-                    RaycastHit hit;
+                Ray ray = new Ray(worldNodePos + Vector3.up * 50, Vector3.down);
+                RaycastHit hit;
 
-                    if (Physics.Raycast(ray,out hit, 100, walkableMask))
-                    {
-                        walkableTerrain.TryGetValue(hit.collider.gameObject.layer, out weight);
-                    }
+                if (Physics.Raycast(ray, out hit, 100, walkableMask))
+                {
+                    walkableTerrain.TryGetValue(hit.collider.gameObject.layer, out weight);
+                }
+
+                if (!isWalkable)
+                {
+                    weight += obstacleProximityWeight;   
                 }
 
                 grid[i, j] = new Node(i, j, worldNodePos, isWalkable, weight);
@@ -68,16 +77,74 @@ public class GridScript : MonoBehaviour
         return grid;
     }
 
+    private void BlurWeightMap(int blurSize)
+    {
+        int kernelSize = blurSize * 2 + 1;
+        int kernelExtents = (kernelSize - 1) / 2;
+
+        int[,] horizontalWeights = new int[gridRows, gridCols];
+        int[,] verticalWeights = new int[gridRows, gridCols];
+
+        for (int col = 0; col < gridCols; col++)
+        {
+            for (int row = -kernelExtents; row <= kernelExtents; row++)
+            {
+                int sampleRow = Mathf.Clamp(row, 0, kernelExtents);
+                horizontalWeights[0, col] += grid[sampleRow, col].Weight;
+            }
+
+            for (int row = 1; row < gridRows; row++)
+            {
+                int removeIndex = Mathf.Clamp(row - kernelExtents - 1, 0, gridRows - 1);
+                int addIndex = Mathf.Clamp(row + kernelExtents, 0, gridRows - 1);
+
+                horizontalWeights[row, col] = horizontalWeights[row - 1, col] - grid[removeIndex, col].Weight + grid[addIndex, col].Weight;
+            }
+        }
+
+        for (int row = 0; row < gridRows; row++)
+        {
+            for (int col = -kernelExtents; col <= kernelExtents; col++)
+            {
+                int sampleCol = Mathf.Clamp(col, 0, kernelExtents);
+                verticalWeights[row, 0] += horizontalWeights[row, sampleCol];
+            }
+
+            int blurredWeight = Mathf.RoundToInt((float)verticalWeights[row, 0] / (kernelSize * kernelSize));
+            grid[row, 0].Weight = blurredWeight;
+
+            for (int col = 1; col < gridCols; col++)
+            {
+                int removeIndex = Mathf.Clamp(col - kernelExtents - 1, 0, gridCols - 1);
+                int addIndex = Mathf.Clamp(col + kernelExtents, 0, gridCols - 1);
+
+                verticalWeights[row, col] = verticalWeights[row, col - 1] - horizontalWeights[row, removeIndex] + horizontalWeights[row, addIndex];
+
+                blurredWeight = Mathf.RoundToInt((float)verticalWeights[row, col] / (kernelSize * kernelSize));
+                grid[row, col].Weight = blurredWeight;
+
+                if (blurredWeight > maxWeight)
+                {
+                    maxWeight = blurredWeight;
+                }
+                if (blurredWeight < minWeight)
+                {
+                    minWeight = blurredWeight;
+                }
+            }
+        }
+    }
+
     public Node GetNodeFromWorldPos(Vector3 worldPosition)
     {
-        float percentX = (worldPosition.x + worldGridSize.x / 2) / worldGridSize.x;
-        percentX = Mathf.Clamp01(percentX);
-
         float percentY = (worldPosition.z + worldGridSize.y / 2) / worldGridSize.y;
         percentY = Mathf.Clamp01(percentY);
 
-        int row = Mathf.RoundToInt((grid.GetLength(0) - 1) * percentX);
-        int col = Mathf.RoundToInt((grid.GetLength(1) - 1) * percentY);
+        float percentX = (worldPosition.x + worldGridSize.x / 2) / worldGridSize.x;
+        percentX = Mathf.Clamp01(percentX);
+
+        int row = Mathf.RoundToInt((gridRows - 1) * percentY);
+        int col = Mathf.RoundToInt((gridCols - 1) * percentX);
 
         return grid[row, col];
     }
@@ -98,8 +165,8 @@ public class GridScript : MonoBehaviour
                 var neighborRow = node.Row + i;
                 var neighborCol = node.Col + j;
 
-                if (neighborRow >= 0 && neighborRow < grid.GetLength(0)  && neighborCol >=
-                    0 && neighborCol < grid.GetLength(1))
+                if (neighborRow >= 0 && neighborRow < gridRows  && neighborCol >=
+                    0 && neighborCol < gridCols)
                 {
                     neighbors.Add(grid[neighborRow, neighborCol]);
                 }
@@ -117,8 +184,10 @@ public class GridScript : MonoBehaviour
         {
             foreach (Node node in grid)
             {
-                Gizmos.color = node.IsWalkable ? Color.white : Color.red;                
-                Gizmos.DrawCube(node.WorldPos, Vector3.one * (worldNodeDiameter - 0.1f));
+                var weightColorDarkness = 1.7f;
+                Gizmos.color = Color.Lerp(Color.white, Color.black, Mathf.InverseLerp(minWeight, maxWeight, node.Weight * weightColorDarkness));
+                Gizmos.color = node.IsWalkable ? Gizmos.color : Color.red;                
+                Gizmos.DrawCube(node.WorldPos, Vector3.one * worldNodeDiameter);
             }
         }
     }
