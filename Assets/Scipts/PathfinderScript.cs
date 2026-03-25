@@ -58,7 +58,7 @@ public class PathfinderScript : MonoBehaviour
                         continue;
                     }
 
-                    int newNeighborGCost = currentNode.GCost + neighbor.GetDistance(currentNode);
+                    int newNeighborGCost = currentNode.GCost + neighbor.GetDistance(currentNode) + neighbor.Weight;
 
                     if (newNeighborGCost < neighbor.GCost || !open.Contains(neighbor))
                     {

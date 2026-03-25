@@ -6,7 +6,7 @@ public class Unit : MonoBehaviour
     [SerializeField] private bool ShowPathGizmos;
     [SerializeField] private Transform target;
 
-    private float speed = 20;
+    private float speed = 5;
     private Vector3[] path;
 
     private int currentWaypointIndex = 0;

@@ -8,19 +8,21 @@ public class Node : IHeapItem<Node>
     public Vector3 WorldPos { get; }
     public bool IsWalkable { get; }
 
-    public int GCost { get; set; } //distance from start node
+    public int GCost { get; set; } = int.MaxValue; //distance from start node
     public int HCost { get; set; } //distance from end node
     public int FCost { get { return GCost + HCost; } }
+    public int Weight { get; }
 
     public Node Parent { get; set; }
     public int HeapIndex { get; set; }
 
-    public Node(int row, int col, Vector3 worldPos, bool isWalkable)
+    public Node(int row, int col, Vector3 worldPos, bool isWalkable, int weight)
     {
         Row = row;
         Col = col;
         WorldPos = worldPos;
         IsWalkable = isWalkable;
+        Weight = weight;
     }
 
     public int GetDistance(Node otherNode)

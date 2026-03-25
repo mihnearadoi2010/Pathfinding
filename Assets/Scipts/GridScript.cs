@@ -7,10 +7,14 @@ public class GridScript : MonoBehaviour
 
     private Node[,] grid;
 
-    [SerializeField] private LayerMask unwalkableMask;
     [SerializeField] private Vector2 worldGridSize;
-
     [SerializeField] private float worldNodeRadius;
+
+    [SerializeField] private TerrainType[] terrainTypes;
+    [SerializeField] private LayerMask unwalkableMask;
+    private Dictionary<int, int> walkableTerrain = new Dictionary<int, int>();
+    private LayerMask walkableMask;
+
     private float worldNodeDiameter;
 
     public int MaxSize { get {  return grid.GetLength(0) * grid.GetLength(1); } }
@@ -21,6 +25,12 @@ public class GridScript : MonoBehaviour
 
         int gridRows = Mathf.RoundToInt(worldGridSize.x / worldNodeDiameter);
         int gridCols = Mathf.RoundToInt(worldGridSize.y / worldNodeDiameter);
+
+        foreach (var terrainType in terrainTypes)
+        {
+            walkableMask.value |= terrainType.TerrainMask.value;
+            walkableTerrain.Add((int)Mathf.Log(terrainType.TerrainMask.value, 2), terrainType.Weight);
+        }
         
         grid = CreateGrid(gridRows, gridCols);
     }
@@ -39,7 +49,19 @@ public class GridScript : MonoBehaviour
 
                 bool isWalkable = !Physics.CheckSphere(worldNodePos, worldNodeRadius, unwalkableMask);
 
-                grid[i, j] = new Node(i, j, worldNodePos, isWalkable);
+                int weight = 0;
+                if (isWalkable)
+                {
+                    Ray ray = new Ray(worldNodePos + Vector3.up * 50, Vector3.down);
+                    RaycastHit hit;
+
+                    if (Physics.Raycast(ray,out hit, 100, walkableMask))
+                    {
+                        walkableTerrain.TryGetValue(hit.collider.gameObject.layer, out weight);
+                    }
+                }
+
+                grid[i, j] = new Node(i, j, worldNodePos, isWalkable, weight);
             }
         }
 
@@ -100,4 +122,11 @@ public class GridScript : MonoBehaviour
             }
         }
     }
+}
+
+[System.Serializable]
+public class TerrainType
+{
+    public LayerMask TerrainMask;
+    public int Weight;
 }
