@@ -5,15 +5,36 @@ public class Unit : MonoBehaviour
 {
     [SerializeField] private bool ShowPathGizmos;
     [SerializeField] private Transform target;
+    private PlayerScript player;
 
-    private float speed = 20;
+    private const float speed = 20;
     private Vector3[] path;
 
     private int currentWaypointIndex = 0;
+    private Coroutine followCoroutine;
+
+    private const float requestCooldown = 0.5f;
+    private float lastRequestTime;
 
     private void Start()
     {
+        player = FindAnyObjectByType<PlayerScript>();
         PathRequestManager.RequestPath(transform.position, target.position, OnPathFound);
+    }
+
+    private void Update()
+    {
+        GetPlayerPosition();
+    }
+
+    private void GetPlayerPosition()
+    {
+        if (player.Velocity.sqrMagnitude > 0.01 && Time.time - lastRequestTime > requestCooldown)
+        {
+            PathRequestManager.RequestPath(transform.position, target.position, OnPathFound);
+            lastRequestTime = Time.time;
+        }
+        
     }
 
     private void OnPathFound(Vector3[] newPath, bool hasFoundPath)
@@ -24,8 +45,13 @@ public class Unit : MonoBehaviour
         }
 
         path = newPath;
-        StopCoroutine(FollowPath());
-        StartCoroutine(FollowPath());
+
+        if (followCoroutine != null)
+        {
+            StopCoroutine(followCoroutine);
+        }
+        
+        followCoroutine = StartCoroutine(FollowPath());
     }
 
     private IEnumerator FollowPath()
@@ -37,7 +63,7 @@ public class Unit : MonoBehaviour
 
             while (true)
             {
-                if (transform.position == currentWaypoint)
+                if (Vector3.Distance(transform.position, currentWaypoint) < 0.1)
                 {
                     break;
                 }

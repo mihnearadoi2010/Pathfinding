@@ -29,8 +29,8 @@ public class GridScript : MonoBehaviour
     {
         worldNodeDiameter = worldNodeRadius * 2;
 
-        gridRows = Mathf.RoundToInt(worldGridSize.x / worldNodeDiameter);
-        gridCols = Mathf.RoundToInt(worldGridSize.y / worldNodeDiameter);
+        gridRows = Mathf.RoundToInt(worldGridSize.y / worldNodeDiameter);
+        gridCols = Mathf.RoundToInt(worldGridSize.x / worldNodeDiameter);
 
         foreach (var terrainType in terrainTypes)
         {
